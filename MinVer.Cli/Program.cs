@@ -4,6 +4,7 @@ namespace MinVer.Cli
     using System.Linq;
     using System.Reflection;
     using McMaster.Extensions.CommandLineUtils;
+    using Version = Version;
 
     class Program
     {
@@ -18,6 +19,7 @@ namespace MinVer.Cli
             var path = app.Option("-p|--path <PATH>", "The path of the repository.", CommandOptionType.SingleValue);
             var tagPrefix = app.Option("-t|--tag-prefix <TAG_PREFIX>", "The tag prefix.", CommandOptionType.SingleValue);
             var verbose = app.Option("-v|--verbose", "Enable verbose logging.", CommandOptionType.NoValue);
+            var versionOverride = app.Option("-o|--version-override <VERSION>", "The version override.", CommandOptionType.SingleValue);
 
             app.OnExecute(() =>
             {
@@ -51,7 +53,16 @@ namespace MinVer.Cli
                     }
                 }
 
-                Console.Out.WriteLine(Versioner.GetVersion(path.Value() ?? ".", verbose.HasValue(), tagPrefix.Value(), minimumMajor, minimumMinor, buildMetadata.Value()));
+                Version @override = null;
+
+                var versionOverrideValue = versionOverride.Value();
+
+                if (!string.IsNullOrEmpty(versionOverrideValue) && !Version.TryParse(versionOverrideValue, out @override))
+                {
+                    throw new Exception($"Invalid version override '{versionOverrideValue}'.");
+                }
+
+                Console.Out.WriteLine(Versioner.GetVersion(path.Value() ?? ".", verbose.HasValue(), tagPrefix.Value(), minimumMajor, minimumMinor, buildMetadata.Value(), @override));
             });
 
             app.Execute(args);

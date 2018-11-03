@@ -8,7 +8,30 @@ namespace MinVer
 
     public static class Versioner
     {
-        public static Version GetVersion(string path, bool verbose, string tagPrefix, int minimumMajor, int minimumMinor, string buildMetadata)
+        public static Version GetVersion(string path, bool verbose, string tagPrefix, int minimumMajor, int minimumMinor, string buildMetadata, Version @override)
+        {
+            Version version;
+            if (@override != default)
+            {
+                Log($"Using version override {@override}");
+                version = @override;
+            }
+            else
+            {
+                version = GetVersion(path, verbose, tagPrefix, minimumMajor, minimumMinor);
+            }
+
+            version = version.AddBuildMetadata(buildMetadata);
+
+            if (verbose)
+            {
+                Log($"Calculated version {version}");
+            }
+
+            return version;
+        }
+
+        private static Version GetVersion(string path, bool verbose, string tagPrefix, int minimumMajor, int minimumMinor)
         {
             // Repository.ctor(string) throws RepositoryNotFoundException in this case
             if (!Directory.Exists(path))
@@ -36,7 +59,7 @@ namespace MinVer
             {
                 try
                 {
-                    return GetVersion(repo, verbose, tagPrefix, minimumMajor, minimumMinor, buildMetadata);
+                    return GetVersion(repo, verbose, tagPrefix, minimumMajor, minimumMinor);
                 }
                 finally
                 {
@@ -49,7 +72,7 @@ namespace MinVer
             return new Version();
         }
 
-        private static Version GetVersion(Repository repo, bool verbose, string tagPrefix, int minimumMajor, int minimumMinor, string buildMetadata)
+        private static Version GetVersion(Repository repo, bool verbose, string tagPrefix, int minimumMajor, int minimumMinor)
         {
             var commit = repo.Commits.FirstOrDefault();
 
@@ -126,22 +149,16 @@ namespace MinVer
             var selectedCandidate = orderedCandidates.Last();
             Log($"Using{(verbose && orderedCandidates.Count > 1 ? "    " : " ")}{selectedCandidate.ToString(tagWidth, versionWidth, heightWidth)}");
 
-            var baseVersion = selectedCandidate.Version.IsBefore(minimumMajor, minimumMinor) ?
+            var version = selectedCandidate.Version.IsBefore(minimumMajor, minimumMinor) ?
                 new Version(minimumMajor, minimumMinor)
                 : selectedCandidate.Version;
 
-            if (baseVersion != selectedCandidate.Version)
+            if (version != selectedCandidate.Version)
             {
-                Log($"Bumping version to {baseVersion} to satisify minimum major minor {minimumMajor}.{minimumMinor}");
+                Log($"Bumping version to {version} to satisify minimum major minor {minimumMajor}.{minimumMinor}");
             }
 
-            var calculatedVersion = baseVersion.AddHeight(selectedCandidate.Height).AddBuildMetadata(buildMetadata);
-            if (verbose)
-            {
-                Log($"Calculated version {calculatedVersion}");
-            }
-
-            return calculatedVersion;
+            return version.AddHeight(selectedCandidate.Height);
         }
 
         private class Candidate

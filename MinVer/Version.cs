@@ -110,24 +110,31 @@ namespace MinVer
 
         public bool IsBefore(int major, int minor) => this.major < major || (this.major == major && this.minor < minor);
 
-        public static Version ParseOrDefault(string text, string prefix)
+        public static Version ParseOrDefault(string text, string prefix) =>
+            text != default && text.StartsWith(prefix ?? "") && TryParse(text.Substring(prefix?.Length ?? 0), out var version) ? version : default;
+
+        public static bool TryParse(string text, out Version version)
         {
+            version = default;
+
             if (text == default)
             {
-                return null;
+                return false;
             }
 
             var numbersAndPreRelease = text.Split(new[] { '-' }, 2);
             var numbers = numbersAndPreRelease[0].Split('.');
 
-            return
-                numbers.Length == 3 &&
-                    numbers[0].StartsWith(prefix ?? "") &&
-                    int.TryParse(numbers[0].Substring(prefix?.Length ?? 0), out var major) &&
-                    int.TryParse(numbers[1], out var minor) &&
-                    int.TryParse(numbers[2], out var patch)
-                ? new Version(major, minor, patch, numbersAndPreRelease.Length == 2 ? numbersAndPreRelease[1].Split('.') : null)
-                : null;
+            if (numbers.Length == 3 &&
+                int.TryParse(numbers[0], out var major) &&
+                int.TryParse(numbers[1], out var minor) &&
+                int.TryParse(numbers[2], out var patch))
+            {
+                version = new Version(major, minor, patch, numbersAndPreRelease.Length == 2 ? numbersAndPreRelease[1].Split('.') : default);
+                return true;
+            }
+
+            return false;
         }
     }
 }
