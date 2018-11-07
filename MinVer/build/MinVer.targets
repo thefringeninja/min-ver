@@ -11,13 +11,12 @@
   </PropertyGroup>
 
   <Target Name="MinVer_GetVersion" Condition=" '$(MinVerVersion)' == '' ">
-    <Error Condition="'$(MinVerVerbose)' != '' And '$(MinVerVerbose)' != 'true' And '$(MinVerVerbose)' != 'false'" Code="MINVER0003" Text="MinVerVerbose/MINVER_VERBOSE value '$(MinVerVerbose)' cannot be converted to a Boolean value." />
     <ItemGroup>
       <MinVerOptions Include="--build-metadata &quot;$(MINVER_BUILD_METADATA)&quot;" />
       <MinVerOptions Include="--major-minor &quot;$(MinVerMajorMinor)&quot;" />
       <MinVerOptions Include="--path &quot;$(MSBuildProjectDirectory)&quot;" />
       <MinVerOptions Include="--tag-prefix &quot;$(MinVerTagPrefix)&quot;" />
-      <MinVerOptions Include="--verbose" Condition="'$(MinVerVerbose)' == 'true'" />
+      <MinVerOptions Include="--verbose &quot;$(MinVerVerbose)&quot;" />
     </ItemGroup>
     <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)../MinVer/MinVer.Cli.dll&quot; @(MinVerOptions->'%(Identity)', ' ')" ConsoleToMSBuild="true">
       <Output TaskParameter="ConsoleOutput" ItemName="MinVerOutput" />

@@ -15,7 +15,7 @@ namespace MinVer.Cli
             var majorMinor = app.Option("-m|--major-minor <MAJOR.MINOR>", "The MAJOR.MINOR version range. E.g. '2.0'.", CommandOptionType.SingleValue);
             var path = app.Option("-p|--path <PATH>", "The path of the repository.", CommandOptionType.SingleValue);
             var tagPrefix = app.Option("-t|--tag-prefix <TAG_PREFIX>", "The tag prefix.", CommandOptionType.SingleValue);
-            var verbose = app.Option("-v|--verbose", "Enable verbose logging.", CommandOptionType.NoValue);
+            var verboseOption = app.Option("-v|--verbose <VERBOSE>", "Enable verbose logging.", CommandOptionType.SingleValue);
 
             app.OnExecute(() =>
             {
@@ -47,7 +47,14 @@ namespace MinVer.Cli
                     }
                 }
 
-                Console.Out.WriteLine(Versioner.GetVersion(path.Value() ?? ".", verbose.HasValue(), tagPrefix.Value(), major, minor, buildMetadata.Value()));
+                var verbose = false;
+                if (verboseOption.HasValue() && !bool.TryParse(verboseOption.Value(), out verbose))
+                {
+                    Console.Out.WriteLine($"MinVer: error MINVER0007 : Invalid VERBOSE value '{verboseOption.Value()}'.");
+                    return 2;
+                }
+
+                Console.Out.WriteLine(Versioner.GetVersion(path.Value() ?? ".", verbose, tagPrefix.Value(), major, minor, buildMetadata.Value()));
                 return 0;
             });
 
